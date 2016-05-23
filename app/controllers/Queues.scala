@@ -1,3 +1,8 @@
+// The MIT License (MIT)
+// Copyright (c) 2016 Paul Lavery
+//
+// See the LICENCE.txt file distributed with this work for additional information regarding copyright ownership.
+
 package controllers
 
 import javax.inject.Inject
@@ -35,7 +40,7 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def addQueue = Action.async(parse.json) {
     request =>
       request.body.validate[UserQueue] match {
-        case JsSuccess(userQueue, _) => 
+        case JsSuccess(userQueue, _) =>
           queueCollection.insert(userQueue).
             map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"Queue $userQueue was saved."))).
             recover(defaultRecoveryPolicy)
@@ -49,7 +54,7 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
         queueCollection.remove(Json.obj("_id" -> queueID), firstMatchOnly = true).
           map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"Queue with id $queueID was deleted.")))).
           recover(defaultRecoveryPolicy)
-      case _ => 
+      case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
   }
@@ -57,18 +62,18 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def addToQueue(userID: String, queueID: String) = Action.async {
     validateUUID(userID, queueID) match {
       case Success(_) =>
-        val userFOption: Future[Option[User]] = 
+        val userFOption: Future[Option[User]] =
           userCollection.find(Json.obj("_id" -> userID)).one[User]
-        val userQueueFOption: Future[Option[UserQueue]] = 
+        val userQueueFOption: Future[Option[UserQueue]] =
           queueCollection.find(Json.obj("_id" -> queueID)).one[UserQueue]
-        val fOptions: Future[(Option[User], Option[UserQueue])] = 
+        val fOptions: Future[(Option[User], Option[UserQueue])] =
           for {
             userOption <- userFOption
             userQueueOption <- userQueueFOption
           } yield (userOption, userQueueOption)
         fOptions.
           flatMap {
-            case (Some(user), Some(userQueue)) => 
+            case (Some(user), Some(userQueue)) =>
               userQueue.queue += user
               queueCollection.update(Json.obj("_id" -> queueID), userQueue).
                 map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was added to the queue $queueID.")))
@@ -76,7 +81,7 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
             case (_, Some(userQueue)) => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "User could not be found")))
           }.
           recover(defaultRecoveryPolicy)
-      case _ => 
+      case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
   }

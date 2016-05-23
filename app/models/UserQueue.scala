@@ -1,3 +1,8 @@
+// The MIT License (MIT)
+// Copyright (c) 2016 Paul Lavery
+//
+// See the LICENCE.txt file distributed with this work for additional information regarding copyright ownership.
+
 package models
 
 import java.util.UUID
@@ -14,7 +19,7 @@ object UserQueue {
   implicit val UserQueueReads: Reads[UserQueue] = (
     (JsPath \ "_id").read[String] and
     (JsPath \ "queue").readNullable[List[User]]
-  )((id: String, queue: Option[List[User]]) => 
+  )((id: String, queue: Option[List[User]]) =>
       new UserQueue(
         UUID.fromString(id),
         new PriorityQueue[User] ++= queue.getOrElse(List[User]())
@@ -25,7 +30,7 @@ object UserQueue {
     (JsPath \ "_id").write[String] and
     (JsPath \ "queue").write[List[User]]
   )((userQueue: UserQueue) => (
-      userQueue._id.toString, 
+      userQueue._id.toString,
       userQueue.queue.getAllByPriority))
 
 }

@@ -1,3 +1,8 @@
+// The MIT License (MIT)
+// Copyright (c) 2016 Paul Lavery
+//
+// See the LICENCE.txt file distributed with this work for additional information regarding copyright ownership.
+
 package controllers
 
 import java.util.UUID
@@ -17,13 +22,13 @@ import utils.RecoveryPolicy.defaultRecoveryPolicy
 
 class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   extends Controller with MongoController with ReactiveMongoComponents {
-  
+
   def collection: JSONCollection = db.collection[JSONCollection]("users")
 
   def addUser = Action.async(parse.json) {
     request =>
       request.body.validate[User] match {
-        case JsSuccess(user, _) => 
+        case JsSuccess(user, _) =>
           collection.insert(user).
             map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was saved."))).
             recover(defaultRecoveryPolicy)
@@ -34,7 +39,7 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def updateUser = Action.async(parse.json) {
     request =>
       request.body.validate[User] match {
-        case JsSuccess(user, _) => 
+        case JsSuccess(user, _) =>
           collection.update(Json.obj("_id" -> user._id), user, upsert = true).
             map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated.")))).
             recover(defaultRecoveryPolicy)
@@ -51,7 +56,7 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
             case _ => NotFound(Json.obj("status" ->"KO", "message" -> "User could not be found"))
           }.
           recover(defaultRecoveryPolicy)
-        case _ => 
+        case _ =>
           Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
   }
@@ -62,10 +67,9 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
         collection.remove(Json.obj("_id" -> userID), firstMatchOnly = true).
           map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User with id $userID was deleted.")))).
           recover(defaultRecoveryPolicy)
-      case _ => 
+      case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
   }
 
 }
-
