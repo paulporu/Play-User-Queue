@@ -29,8 +29,7 @@ object UserQueue {
   implicit val UserQueueWrites: OWrites[UserQueue] = (
     (JsPath \ "_id").write[String] and
     (JsPath \ "queue").write[List[User]]
-  )((userQueue: UserQueue) => (
-      userQueue._id.toString,
-      userQueue.queue.getAllByPriority))
+  )((userQueue: UserQueue) => 
+      (userQueue._id.toString, userQueue.queue.getAllByPriority))
 
 }

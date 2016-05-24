@@ -21,7 +21,9 @@ import utils.RecoveryPolicy.defaultRecoveryPolicy
 
 
 class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
-  extends Controller with MongoController with ReactiveMongoComponents {
+    extends Controller
+    with MongoController
+    with ReactiveMongoComponents {
 
   def collection: JSONCollection = db.collection[JSONCollection]("users")
 
@@ -29,9 +31,10 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
     request =>
       request.body.validate[User] match {
         case JsSuccess(user, _) =>
-          collection.insert(user).
-            map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was saved."))).
-            recover(defaultRecoveryPolicy)
+          collection
+            .insert(user)
+            .map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was saved.")))
+            .recover(defaultRecoveryPolicy)
         case _ => Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid JSON request")))
       }
   }
@@ -40,9 +43,10 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
     request =>
       request.body.validate[User] match {
         case JsSuccess(user, _) =>
-          collection.update(Json.obj("_id" -> user._id), user, upsert = true).
-            map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated.")))).
-            recover(defaultRecoveryPolicy)
+          collection
+            .update(Json.obj("_id" -> user._id), user, upsert = true)
+            .map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated."))))
+            .recover(defaultRecoveryPolicy)
         case _ => Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid JSON request")))
       }
   }
@@ -50,12 +54,14 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def getUser(userID: String) = Action.async {
     validateUUID(userID) match {
       case Success(_) =>
-        collection.find(Json.obj("_id" -> userID)).one[User].
-          map {
+        collection
+          .find(Json.obj("_id" -> userID))
+          .one[User]
+          .map {
             case Some(user)=> Ok(Json.toJson(user))
             case _ => NotFound(Json.obj("status" ->"KO", "message" -> "User could not be found"))
-          }.
-          recover(defaultRecoveryPolicy)
+          }
+          .recover(defaultRecoveryPolicy)
         case _ =>
           Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
@@ -64,9 +70,10 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def deleteUser(userID: String) = Action.async {
     validateUUID(userID) match {
       case Success(_) =>
-        collection.remove(Json.obj("_id" -> userID), firstMatchOnly = true).
-          map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User with id $userID was deleted.")))).
-          recover(defaultRecoveryPolicy)
+        collection
+          .remove(Json.obj("_id" -> userID), firstMatchOnly = true)
+          .map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User with id $userID was deleted."))))
+          .recover(defaultRecoveryPolicy)
       case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }

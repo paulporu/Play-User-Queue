@@ -23,7 +23,9 @@ import utils.RecoveryPolicy.defaultRecoveryPolicy
 
 
 class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
-  extends Controller with MongoController with ReactiveMongoComponents {
+    extends Controller
+    with MongoController
+    with ReactiveMongoComponents {
 
 
   def userCollection: JSONCollection = db.collection[JSONCollection]("users")
@@ -32,18 +34,19 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def getAll = Action.async {
     val cursor: Cursor[JsObject] = queueCollection.find(Json.obj()).cursor[JsObject]()
     val userQueueList: Future[List[JsObject]] = cursor.collect[List]()
-    userQueueList.
-      map(userQueues => Ok(Json.toJson(userQueues))).
-      recover(defaultRecoveryPolicy)
+    userQueueList
+      .map(userQueues => Ok(Json.toJson(userQueues)))
+      .recover(defaultRecoveryPolicy)
   }
 
   def addQueue = Action.async(parse.json) {
     request =>
       request.body.validate[UserQueue] match {
         case JsSuccess(userQueue, _) =>
-          queueCollection.insert(userQueue).
-            map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"Queue $userQueue was saved."))).
-            recover(defaultRecoveryPolicy)
+          queueCollection
+            .insert(userQueue)
+            .map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"Queue $userQueue was saved.")))
+            .recover(defaultRecoveryPolicy)
         case _ => Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid JSON request")))
       }
   }
@@ -51,9 +54,10 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def deleteQueue(queueID: String) = Action.async {
     validateUUID(queueID) match {
       case Success(_) =>
-        queueCollection.remove(Json.obj("_id" -> queueID), firstMatchOnly = true).
-          map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"Queue with id $queueID was deleted.")))).
-          recover(defaultRecoveryPolicy)
+        queueCollection
+          .remove(Json.obj("_id" -> queueID), firstMatchOnly = true)
+          .map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"Queue with id $queueID was deleted.")))) 
+          .recover(defaultRecoveryPolicy)
       case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
@@ -66,21 +70,21 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
           userCollection.find(Json.obj("_id" -> userID)).one[User]
         val userQueueFOption: Future[Option[UserQueue]] =
           queueCollection.find(Json.obj("_id" -> queueID)).one[UserQueue]
-        val fOptions: Future[(Option[User], Option[UserQueue])] =
-          for {
-            userOption <- userFOption
-            userQueueOption <- userQueueFOption
-          } yield (userOption, userQueueOption)
-        fOptions.
-          flatMap {
+        val fOptions: Future[(Option[User], Option[UserQueue])] = for {
+          userOption <- userFOption
+          userQueueOption <- userQueueFOption
+        } yield (userOption, userQueueOption)
+        fOptions
+          .flatMap {
             case (Some(user), Some(userQueue)) =>
               userQueue.queue += user
-              queueCollection.update(Json.obj("_id" -> queueID), userQueue).
-                map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was added to the queue $queueID.")))
+              queueCollection
+                .update(Json.obj("_id" -> queueID), userQueue)
+                .map(_ => Ok(Json.obj("status" ->"OK", "message" -> s"User $user was added to the queue $queueID.")))
             case (Some(user), _) => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "Queue could not be found")))
-            case (_, Some(userQueue)) => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "User could not be found")))
-          }.
-          recover(defaultRecoveryPolicy)
+            case _ => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "User could not be found")))
+            }
+          .recover(defaultRecoveryPolicy)
       case _ =>
         Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid UUID format")))
     }
