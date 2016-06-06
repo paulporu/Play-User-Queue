@@ -8,7 +8,11 @@ GET		/user/get/:userID						controllers.Users.getUser(userID: String)
 POST	/user/delete/:userID					controllers.Users.deleteUser(userID: String)
 POST    /user/add         						controllers.Users.addUser
 POST    /user/update         					controllers.Users.updateUser
-GET 	/queue/all								controllers.Queues.getAll
+GET 	/queue/all								controllers.Queues.getAllQueues
 POST    /queue/add         						controllers.Queues.addQueue
 POST	/queue/delete/:queueID					controllers.Queues.deleteQueue(queueID: String)
-POST	/queue/addToQueue/:userID/:queueID		controllers.Queues.addToQueue(userID: String, queueID: String)
+POST	/queue/cleanupQueue/:queueID			controllers.Queues.cleanupQueue(queueID: String)
+GET		/queue/getFirst/:queueID				controllers.Queues.getFirstInQueue(queueID: String)
+GET		/queue/getAll/:queueID					controllers.Queues.getAllInQueue(queueID: String)
+POST	/queue/popFirst/:queueID				controllers.Queues.popFirstFromQueue(queueID: String)
+POST	/queue/addToQueue/:queueID/:userID		controllers.QueuesWithUsers.addToQueue(queueID: String, userID: String)

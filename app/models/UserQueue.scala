@@ -11,7 +11,28 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import com.github.paulporu.PriorityQueue
 
-case class UserQueue(_id: UUID, queue: PriorityQueue[User])
+class UserQueue(val _id: UUID, var queue: PriorityQueue[User]) {
+
+  def enqueue(user: User): Unit =
+    if (!queue.exists(_._id == user._id)) queue += user
+
+  def remove(user: User): Unit =
+    queue = queue.filter(_._id != user._id).asInstanceOf[PriorityQueue[User]]
+
+  // If your queue has several millions of users in it you would want
+  // to check that the priority does not go below Integer.MIN_VALUE
+  def moveToTop(user: User): Unit = {
+    queue
+      .zipWithIndex
+      .find(_._1._id == user._id )
+      .map { case (usr, index) =>
+        queue.remove(index)
+        val updatedUser = usr.copy(priority = queue.head.priority - 1)
+        queue += updatedUser
+      }
+  }
+
+}
 
 object UserQueue {
 
@@ -29,7 +50,6 @@ object UserQueue {
   implicit val UserQueueWrites: OWrites[UserQueue] = (
     (JsPath \ "_id").write[String] and
     (JsPath \ "queue").write[List[User]]
-  )((userQueue: UserQueue) => 
+  )((userQueue: UserQueue) =>
       (userQueue._id.toString, userQueue.queue.getAllByPriority))
-
 }
