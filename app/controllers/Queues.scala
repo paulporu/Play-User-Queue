@@ -123,15 +123,21 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
           .one[UserQueue]
           .flatMap {
             case Some(userQueue) =>
-              var cleanQueue: UserQueue = userQueue
-              userQueue.queue.zipWithIndex.foreach {
-                case (user, index) =>
-                  val userFOption = userCollection.find(Json.obj("_id" -> user._id)).one[User]
-                  userFOption.collect{ case None => cleanQueue.queue.remove(index) }
+              val futures = Future.sequence {
+                userQueue.queue
+                  .zipWithIndex
+                  .map {
+                    case (user, index) =>
+                      val userFOption = userCollection.find(Json.obj("_id" -> user._id)).one[User]
+                      userFOption.map(userOption => if (userOption.isEmpty) userQueue.queue.remove(index))
+                  }
               }
-              queueCollection
-                .update(Json.obj("_id" -> userQueue._id), cleanQueue)
-                .map(_ => Ok(Json.obj("status" ->"OK", "message" -> ("Deleted users were removed from queue"))))
+              for {
+                f <- futures 
+                update <- queueCollection.update(Json.obj("_id" -> userQueue._id), userQueue)
+                } yield { 
+                Ok(Json.obj("status" ->"OK", "message" -> ("Deleted users were removed from queue")))
+              }
             case _ => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "Queue could not be found")))
           }
           .recover(defaultRecoveryPolicy)

@@ -6,7 +6,6 @@
 package models
 
 import java.util.UUID
-import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import com.github.paulporu.PriorityQueue
@@ -25,10 +24,11 @@ class UserQueue(val _id: UUID, var queue: PriorityQueue[User]) {
     queue
       .zipWithIndex
       .find(_._1._id == user._id )
-      .map { case (usr, index) =>
-        queue.remove(index)
-        val updatedUser = usr.copy(priority = queue.head.priority - 1)
-        queue += updatedUser
+      .collect { 
+        case (usr, index) if (index != 0) =>
+          queue.remove(index)
+          val updatedUser = usr.copy(priority = queue.head.priority - 1)
+          queue += updatedUser
       }
   }
 
