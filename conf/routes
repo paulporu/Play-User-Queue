@@ -7,7 +7,7 @@ GET     /hello                      			controllers.Application.sayHello
 GET		/user/get/:userID						controllers.Users.getUser(userID: String)
 POST	/user/delete/:userID					controllers.Users.deleteUser(userID: String)
 POST    /user/add         						controllers.Users.addUser
-POST    /user/update         					controllers.QueuesWithUsers.updateUser
+POST    /user/update/:updatedPriority         	controllers.QueuesWithUsers.updateUser(updatedPriority: Boolean)
 GET 	/queue/all								controllers.Queues.getAllQueues
 POST    /queue/add         						controllers.Queues.addQueue
 POST	/queue/delete/:queueID					controllers.Queues.deleteQueue(queueID: String)

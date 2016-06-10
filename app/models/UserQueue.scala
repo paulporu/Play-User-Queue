@@ -24,7 +24,7 @@ class UserQueue(val _id: UUID, var queue: PriorityQueue[User]) {
     queue
       .zipWithIndex
       .find(_._1._id == user._id )
-      .collect { 
+      .collect {
         case (usr, index) if (index != 0) =>
           queue.remove(index)
           val updatedUser = usr.copy(priority = queue.head.priority - 1)

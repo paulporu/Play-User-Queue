@@ -13,6 +13,7 @@ import play.api.libs.json._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.modules.reactivemongo._
 import reactivemongo.play.json.collection.JSONCollection
+import reactivemongo.api.Cursor
 import reactivemongo.play.json._
 import models.{User, UserQueue}
 import utils.Validation.validateUUID
@@ -28,7 +29,7 @@ class QueuesWithUsers @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def userCollection: JSONCollection = db.collection[JSONCollection]("users")
   def queueCollection: JSONCollection = db.collection[JSONCollection]("userQueues")
 
-  case class QueueWithUserAction(queueID: String, userID: String)(block: (UserQueue, User) => JsObject) 
+  case class QueueWithUserAction(queueID: String, userID: String)(block: (UserQueue, User) => JsObject)
       extends Action[AnyContent] {
 
     def apply(request: Request[AnyContent]): Future[Result] = {
@@ -81,11 +82,11 @@ class QueuesWithUsers @Inject() (val reactiveMongoApi: ReactiveMongoApi)
       Json.obj(
         "success" -> true,
         "message" -> s"User $userID was removed from the queue $queueID."
-      )  
+      )
     }
 
   // This method is merely an artifact to conveniently bump a user to the top of a queue.
-  // As such it does not change the priority of the user anywhere else but in said queue. 
+  // As such it does not change the priority of the user anywhere else but in said queue.
   def moveToTopOFQueue(queueID: String, userID: String) = QueueWithUserAction(queueID,userID) {
     (userQueue, user) =>
       userQueue.queue
@@ -103,19 +104,42 @@ class QueuesWithUsers @Inject() (val reactiveMongoApi: ReactiveMongoApi)
           )}
   }
 
-  def updateUser = Action.async(parse.json) {
+  def updateUser(updatedPriority: Boolean) = Action.async(parse.json) {
     request =>
       request.body.validate[User] match {
         case JsSuccess(user, _) =>
-          val userUpdate = 
-            userCollection
-              .update(Json.obj("_id" -> user._id), user, upsert = true)
-          val queueUpdates = 
-            queueCollection
-              .update(Json.obj("_id" -> user._id), user, multi = true)
-
-            .map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated."))))            
-            .recover(defaultRecoveryPolicy)
+          val userUpdate = userCollection.update(Json.obj("_id" -> user._id), user, upsert = true)
+          val selector = Json.obj("queue._id" -> user._id)
+          // If the priority of the user has changed we need to force each queue
+          // containing said user to reorder their elements
+          if (updatedPriority) {
+            val cursor: Cursor[UserQueue] = queueCollection.find(selector).cursor[UserQueue]()
+            val userQueueFList: Future[List[UserQueue]] = cursor.collect[List]()
+            userQueueFList.flatMap {
+              userQueueList =>
+                val updates = userQueueList.map {
+                  userQueue =>
+                    userQueue.remove(user)
+                    userQueue.enqueue(user)
+                    queueCollection.update(Json.obj("_id" -> userQueue._id), userQueue)
+                }
+                Future.sequence(updates)
+                  .map (_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated."))))
+                  .recover(defaultRecoveryPolicy)
+            }
+          }
+          // Otherwise we just update the queues with the new value of user
+          else {
+            val modifier = Json.obj("$set" -> Json.obj("queue.$" -> user))
+            val queueUpdates = queueCollection.update(selector, modifier, multi = true)
+            val updates = for {
+              x <- userUpdate
+              y <- queueUpdates
+            } yield {
+              Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated.")))
+            }
+            updates.recover(defaultRecoveryPolicy)
+          }
         case _ => Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid JSON request")))
       }
   }

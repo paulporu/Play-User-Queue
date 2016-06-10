@@ -14,7 +14,6 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.modules.reactivemongo._
 import reactivemongo.play.json.collection.JSONCollection
 import reactivemongo.api.Cursor
-import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json._
 import models.{User, UserQueue}
 import utils.Validation.validateUUID
@@ -133,9 +132,9 @@ class Queues @Inject() (val reactiveMongoApi: ReactiveMongoApi)
                   }
               }
               for {
-                f <- futures 
+                f <- futures
                 update <- queueCollection.update(Json.obj("_id" -> userQueue._id), userQueue)
-                } yield { 
+                } yield {
                 Ok(Json.obj("status" ->"OK", "message" -> ("Deleted users were removed from queue")))
               }
             case _ => Future.successful(NotFound(Json.obj("status" ->"KO", "message" -> "Queue could not be found")))
