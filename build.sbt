@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   ws,
   "com.github.paulporu" %% "flexible-user-queue" % "1.2",
   "com.typesafe.akka" %% "akka-actor" % "2.3.14",
-  "org.reactivemongo" %% "play2-reactivemongo" % "0.11.10"
+  "org.reactivemongo" %% "play2-reactivemongo" % "0.11.10",
+  "org.scalatestplus" %% "play" % "1.4.0" % "test"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"

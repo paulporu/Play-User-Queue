@@ -1,24 +1,26 @@
-import org.specs2.mutable._
-import org.specs2.runner._
-import org.junit.runner._
+package test 
 
 import play.api.test._
 import play.api.test.Helpers._
+import org.scalatestplus.play._
+import org.scalatest._
 
 
-@RunWith(classOf[JUnitRunner])
-class ApplicationSpec extends Specification {
+class ApplicationSpec extends PlaySpec with OneAppPerTest {
 
-  "Application" should {
+  "Application" must {
 
-    // "send 404 on a bad request" in new WithApplication{
-    //   route(FakeRequest(GET, "/boum")) must beSome.which (status(_) == NOT_FOUND)
-    // }
+    "send 404 on a bad request" in {
+      val nowhere = route(FakeRequest(GET, "/nowhere")).get
+      status(nowhere) mustBe (NOT_FOUND)
+    }
 
-    "Say Hello" in new WithApplication {
-      val greeting = controllers.Application.sayHello()(FakeRequest(GET, "/hello"))
-      status(greeting) must equalTo(OK)
-      contentAsString(greeting) must beEqualTo (""""Hello there!"""" ) 
+    "render the hello page" in {
+      val hello = route(FakeRequest(GET, "/hello")).get
+
+      status(hello) mustBe (OK)
+      contentType(hello) mustBe Some("application/json")
+      contentAsString(hello) must include ("Hello there!")
     }
   }
 }
