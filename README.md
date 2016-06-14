@@ -22,8 +22,27 @@ You can also use the command line:
 
 For more information you can visit: [https://www.playframework.com/documentation/2.5.x/PlayConsole](https://www.playframework.com/documentation/2.5.x/PlayConsole)
 
-## Usage
+## Endpoints
 
+### Users
+
+``` GET /user/get ``` Gets user details   
+``` POST /user/delete ``` Deletes user from DB   
+``` POST /user/add ``` Adds new user to DB   
+``` POST /user/update ``` Updates user    
+
+### Queues
+
+``` GET /queue/all ``` Gets	queue details				
+``` POST /queue/add ``` Adds new queue to DB    
+``` POST /queue/delete ``` Deletes queue from DB   
+``` POST /queue/cleanup ``` Removes deleted users from queue   
+``` GET /queue/getFirst ``` Gets first user in queue   
+``` GET /queue/getAll ``` Gets all users in queue   
+``` POST /queue/popFirst ``` Pops first user from queue   
+``` POST /queue/enqueue ``` Adds user to queue   
+``` POST /queue/dequeue ``` Removes user from queue   
+``` POST /queue/bump ``` Moves user to the top of the queue
 
 ## Dependencies
 
