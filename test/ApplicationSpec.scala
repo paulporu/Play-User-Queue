@@ -2,12 +2,10 @@ package test
 
 import play.api.test._
 import play.api.test.Helpers._
-import org.scalatestplus.play._
-import org.scalatest._
 
 
-class ApplicationSpec extends PlaySpec with OneAppPerTest {
-
+class ApplicationSpec extends PlayWithDBSpec {
+    
   "Application" must {
 
     "send 404 on a bad request" in {
@@ -21,6 +19,10 @@ class ApplicationSpec extends PlaySpec with OneAppPerTest {
       status(hello) mustBe (OK)
       contentType(hello) mustBe Some("application/json")
       contentAsString(hello) must include ("Hello there!")
+    }
+
+    "connect to test DB" in {
+      reactiveMongoApi.db mustNot be (null)
     }
   }
 }
