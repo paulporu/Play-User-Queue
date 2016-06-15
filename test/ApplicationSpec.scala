@@ -1,11 +1,19 @@
 package test 
 
+import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._
+import org.scalatest.DoNotDiscover
+import org.scalatestplus.play._
+import play.modules.reactivemongo.ReactiveMongoApi
 
 
-class ApplicationSpec extends PlayWithDBSpec {
+@DoNotDiscover
+class ApplicationSpec extends PlaySpec with ConfiguredApp {
     
+  lazy val reactiveMongoApi = current.injector.instanceOf[ReactiveMongoApi]
+
+
   "Application" must {
 
     "send 404 on a bad request" in {

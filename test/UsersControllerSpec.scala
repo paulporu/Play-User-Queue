@@ -2,22 +2,26 @@ package test
 
 import java.util.UUID
 import scala.concurrent.Future
+import play.api.Play.current
 import play.api.mvc.Result
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.libs.json._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Span, Seconds}
+import play.modules.reactivemongo.ReactiveMongoApi
 import play.modules.reactivemongo.json._
 import reactivemongo.play.json.collection.JSONCollection
 import models.User
 import controllers.Users
+import org.scalatest.DoNotDiscover
+import org.scalatestplus.play._
+import org.scalatest.concurrent.ScalaFutures.whenReady
 
 
-class UsersControllerSpec extends PlayWithDBSpec with ScalaFutures {
+@DoNotDiscover
+class UsersControllerSpec extends PlaySpec with ConfiguredApp {
 
-  implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds))
+  lazy val reactiveMongoApi = current.injector.instanceOf[ReactiveMongoApi]
 
   def userCollection: JSONCollection = reactiveMongoApi.db.collection[JSONCollection]("users")
   
