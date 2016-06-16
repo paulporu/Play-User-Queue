@@ -1,5 +1,18 @@
-language: scala
+sudo: 
+  - required
+language: 
+  -  scala
 jdk:
   - oraclejdk8
 scala:
-   - 2.11.7
+  - 2.11.7
+services:
+  - mongodb
+addons:
+  apt:
+    sources:
+    - mongodb-3.0-precise
+    packages:
+    - mongodb-org-server
+after_failure:
+  - cat /home/travis/build/paulporu/Play-User-Queue/logs/application.log
