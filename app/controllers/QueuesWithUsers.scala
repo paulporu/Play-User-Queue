@@ -29,6 +29,15 @@ class QueuesWithUsers @Inject() (val reactiveMongoApi: ReactiveMongoApi)
   def userCollection: JSONCollection = db.collection[JSONCollection]("users")
   def queueCollection: JSONCollection = db.collection[JSONCollection]("userQueues")
 
+
+  /** A custom Action used by the methods defined in this controller
+  *
+  * The motivation for this custom Action class is to greatly reduce boilerplate code
+  * as all methods in this controller follow the same pattern:
+  * - retrieve a queue and a user
+  * - handle corner cases of the queue and / or the user being empty
+  * - otherwise perform a "block" of computation and save the updated queue in the DB
+  */
   case class QueueWithUserAction(queueID: String, userID: String)(block: (UserQueue, User) => JsObject)
       extends Action[AnyContent] {
 
