@@ -39,18 +39,6 @@ class Users @Inject() (val reactiveMongoApi: ReactiveMongoApi)
       }
   }
 
-  def updateUser = Action.async(parse.json) {
-    request =>
-      request.body.validate[User] match {
-        case JsSuccess(user, _) =>
-          collection
-            .update(Json.obj("_id" -> user._id), user, upsert = true)
-            .map(_ => Ok(Json.obj("status" ->"OK", "message" -> (s"User $user was updated."))))
-            .recover(defaultRecoveryPolicy)
-        case _ => Future.successful(BadRequest(Json.obj("status" ->"KO", "message" -> "Invalid JSON request")))
-      }
-  }
-
   def getUser(userID: String) = Action.async {
     validateUUID(userID) match {
       case Success(_) =>
